@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout logseq-i18n-lint source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ env.LINT_REPO }}
           ref: ${{ env.LINT_REF }}
@@ -29,7 +29,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry and build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry/index/
@@ -73,7 +73,7 @@ jobs:
 
     steps:
       - name: Checkout logseq-i18n-lint source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ env.LINT_REPO }}
           ref: ${{ env.LINT_REF }}
@@ -85,7 +85,7 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Cache cargo registry and build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry/index/
@@ -125,7 +125,7 @@ jobs:
         run: cp lint-src/target/${{ matrix.target }}/release/logseq-i18n-lint.exe ${{ matrix.artifact }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
@@ -136,10 +136,10 @@ jobs:
 
     steps:
       - name: Checkout this repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Checkout logseq-i18n-lint source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ env.LINT_REPO }}
           ref: ${{ env.LINT_REF }}
@@ -147,7 +147,7 @@ jobs:
           path: lint-src
 
       - name: Download built artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
           merge-multiple: true

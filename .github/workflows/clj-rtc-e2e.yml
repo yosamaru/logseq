@@ -33,15 +33,15 @@ jobs:
     if: "contains(github.event.head_commit.message, 'rtc')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           version: 10.33.0
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -49,19 +49,19 @@ jobs:
             pnpm-lock.yaml
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Set up Clojure
-        uses: DeLaGuardo/setup-clojure@13.5
+        uses: DeLaGuardo/setup-clojure@13.7.0
         with:
           cli: ${{ env.CLOJURE_VERSION }}
           bb: ${{ env.BABASHKA_VERSION }}
 
       - name: Clojure cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: clojure-deps
         with:
           path: |
@@ -75,7 +75,7 @@ jobs:
         run: clojure -A:cljs -P
 
       - name: Shadow-cljs cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .shadow-cljs
           # ensure update cache every time
@@ -95,7 +95,7 @@ jobs:
           pnpm gulp:build && clojure -M:cljs release app db-worker --config-merge "{:closure-defines {frontend.config/DEV-RELEASE true}}" --debug && pnpm webpack-app-build
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: static-build
           path: static/
@@ -109,7 +109,7 @@ jobs:
           pnpm --dir deps/db-sync build:node-adapter
 
       - name: Upload db-sync node adapter
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: db-sync-node-adapter
           path: deps/db-sync/worker/dist/node-adapter.js
@@ -126,32 +126,33 @@ jobs:
         test-task: [run-rtc-extra-test, run-rtc-extra-part2-test]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
+          package-manager-cache: false
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           version: 10.33.0
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Set up Clojure
-        uses: DeLaGuardo/setup-clojure@13.5
+        uses: DeLaGuardo/setup-clojure@13.7.0
         with:
           cli: ${{ env.CLOJURE_VERSION }}
           bb: ${{ env.BABASHKA_VERSION }}
 
       - name: Clojure cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.m2/repository
@@ -160,13 +161,13 @@ jobs:
           restore-keys: ${{ runner.os }}-clojure-deps-
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: static-build
           path: static
 
       - name: Download db-sync node adapter
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: db-sync-node-adapter
           path: deps/db-sync/worker/dist
@@ -184,7 +185,7 @@ jobs:
 
       - name: Collect screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: e2e-screenshots-${{ matrix.test-task }}
           path: clj-e2e/e2e-dump/*
