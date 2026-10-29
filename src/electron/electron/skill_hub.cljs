@@ -28,11 +28,11 @@
     {:error {:code (.-code error) :message (.-message error)}}
     (failure)))
 
-(defn <request [operation args]
+(defn <request [operation args & [graph-path]]
   ;; Always resolve an envelope: generic IPC rejection logging must never
   ;; receive an edited SKILL.md or another sensitive request body.
   (-> (p/resolved nil)
-      (p/then (fn [_] (.request (runtime!) operation (bean/->js args))))
+      (p/then (fn [_] (.request (runtime!) operation (bean/->js args) graph-path)))
       (p/then bean/->clj)
       (p/catch (fn [_] (failure)))))
 
@@ -45,8 +45,8 @@
             {:result (bean/->clj item)})))
       (p/catch directory-failure)))
 
-(defn <reveal [id]
-  (-> (p/let [response (<request "detail" {:id id})]
+(defn <reveal [id graph-path]
+  (-> (p/let [response (<request "detail" {:id id} graph-path)]
         (if (:error response)
           response
           (do (.showItemInFolder shell (node-path/join (get-in response [:result :path]) "SKILL.md"))

@@ -6,6 +6,35 @@ import { createRequire } from 'node:module';
 import { DesktopHub } from '../src/desktop.mjs';
 import { fixture, skill, content } from './helpers.mjs';
 
+test('graph skills load on open and refresh without persisting graph roots', async t => {
+  const base = await fixture(t);
+  const userData = path.join(base, 'app-data'); await fs.mkdir(userData);
+  const graph = path.join(base, 'graphs', 'AI-Workbench'); await fs.mkdir(graph, { recursive: true });
+  const service = new DesktopHub(userData);
+  assert.equal((await service.request('scan', {}, graph)).result.skills.length, 0);
+  await skill(path.join(graph, 'skills'), 'first');
+  let response = await service.request('scan', {}, graph);
+  assert.deepEqual(response.result.skills.map(item => item.name), ['first']);
+  assert.equal(response.result.skills[0].writable, false);
+  await skill(path.join(graph, 'skills'), 'second');
+  assert.equal((await service.request('scan', {}, graph)).result.skills.length, 2);
+  const item = response.result.skills[0];
+  assert.equal((await service.request('detail', { id: item.id }, graph)).result.name, 'first');
+  assert.equal((await service.request('preview', { kind: 'save', id: item.id, expected: item.contentHash, text: content('first') }, graph)).error.code, 'READ_ONLY');
+  const otherGraph = path.join(base, 'graphs', 'Other');
+  await skill(path.join(otherGraph, 'skills'), 'other');
+  assert.deepEqual((await service.request('scan', {}, otherGraph)).result.skills.map(item => item.name), ['other']);
+  assert.equal((await service.request('scan')).result.skills.length, 0);
+  const reopened = new DesktopHub(userData);
+  assert.equal((await reopened.request('scan', {}, graph)).result.skills.length, 2);
+  const saved = JSON.parse(await fs.readFile(path.join(userData, 'skill-hub-config.json'), 'utf8'));
+  assert.equal(saved.roots.length, 1);
+  await reopened.authorizeDirectory('root', path.join(graph, 'skills'));
+  response = await reopened.request('scan', {}, graph);
+  assert.equal(response.result.skills.length, 2);
+  assert.equal(response.result.skills.some(item => item.issues.some(issue => issue.code === 'DUPLICATE_NAME')), false);
+});
+
 test('native runtime initializes owned directories and persists read-only imports', async t => {
   const base = await fixture(t);
   const userData = path.join(base, 'app-data'); await fs.mkdir(userData);

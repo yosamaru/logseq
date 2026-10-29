@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Hub } from './hub.mjs';
-import { safePath, exists, atomicWrite, check } from './files.mjs';
+import { safePath, exists, atomicWrite, check, inside, digest } from './files.mjs';
 import { adapters } from './adapters.mjs';
 
 // Owned by Electron main. No sockets, child server or plugin SDK. One instance
@@ -31,10 +31,28 @@ export class DesktopHub {
     this.hub = await new Hub(config).init();
     return this.hub;
   }
-  async request(operation, args = {}) {
+  async request(operation, args = {}, graphPath = null) {
     const task = this.queue.then(async () => {
       try {
         const hub = await this.init();
+        const roots = hub.config.roots.filter(root => !root.graph);
+        if (graphPath) {
+          check(path.isAbsolute(graphPath), 'PATH', 'Absolute graph directory required');
+          const source = path.join(graphPath, 'skills');
+          if (await exists(source) && !roots.some(root => inside(root.path, source))) {
+            await safePath(source);
+            roots.push({ id: `graph-${digest(source)}`, path: source, writable: false, graph: true });
+          }
+        }
+        if (JSON.stringify(roots) !== JSON.stringify(hub.config.roots)) {
+          // Reuse the same records/transaction owner across windows. Only the
+          // active graph's source is transient; never persist it as a global root.
+          const config = { ...hub.config, roots };
+          new Hub(config); // Validate directory overlaps before changing permissions.
+          hub.config = config;
+          hub.index.clear();
+          hub.plans.clear();
+        }
         return { result: await hub.dispatch(operation, args) };
       } catch (error) {
         // Return failures as data. The generic Electron handler logs rejected
@@ -54,6 +72,7 @@ export class DesktopHub {
       check(['root', 'target'].includes(kind), 'CONFIG', 'Unknown directory purpose');
       if (kind === 'target') check(Object.hasOwn(adapters, agent), 'ADAPTER', 'Choose a supported Agent');
       const config = structuredClone(hub.config);
+      config.roots = config.roots.filter(root => !root.graph);
       const item = { id: `${kind}-${randomUUID()}`, path: selected, ...(kind === 'root' ? { writable: writable === true } : { agent }) };
       config[kind === 'root' ? 'roots' : 'targets'].push(item);
       const next = await new Hub(config).init();
