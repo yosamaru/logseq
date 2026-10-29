@@ -135,7 +135,7 @@ jobs:
       - name: Build unsigned x64 NSIS installer
         working-directory: static
         run: |
-          pnpm install --frozen-lockfile
+          pnpm install --ignore-workspace --frozen-lockfile
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node ../scripts/electron-builder-unsigned.mjs --win nsis --x64
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
