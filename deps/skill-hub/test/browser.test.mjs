@@ -51,6 +51,8 @@ test('built-in view: automatic startup, native bridge, edit, sanitize, install, 
   await page.goto(`http://127.0.0.1:${ui.address().port}`);
   const view = page.frameLocator('iframe');
   await view.getByRole('button', { name: /sample.*Review source/ }).waitFor();
+  assert.equal(await view.getByRole('button', { name: 'Close', exact: true }).count(), 0);
+  assert.equal(await view.getByRole('heading', { name: 'Skill Hub', exact: true }).count(), 0);
   const themeStyle = await page.addStyleTag({ content: `
     :root { --background: 190 100% 11%; --foreground: 44 87% 94%;
       --secondary: 192 81% 14%; --border: 192 26% 32%; --primary: 175 59% 40%;

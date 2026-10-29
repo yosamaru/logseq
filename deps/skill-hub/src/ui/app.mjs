@@ -35,13 +35,17 @@ async function run(fn) {
   document.querySelectorAll('button').forEach(node => { node.disabled = true; });
   try { await fn(); }
   catch (error) { notice(`${t('error')}: ${error.message}`, true); }
-  finally { state.busy = false; document.querySelectorAll('button').forEach(node => { node.disabled = false; }); }
+  finally {
+    state.busy = false;
+    if (document.querySelector('#notice').textContent === t('loading')) notice('');
+    document.querySelectorAll('button').forEach(node => { node.disabled = false; });
+  }
 }
 function canDiscard() { return !state.dirty || globalThis.confirm(t('discarded')); }
 async function scan() {
   const result = await rpc('scan'); state.skills = result.skills;
   render();
-  notice(result.errors.length || result.interrupted.length ? JSON.stringify({ errors: result.errors, interrupted: result.interrupted }) : `${state.skills.length} ${t('count')}`);
+  notice(result.errors.length || result.interrupted.length ? JSON.stringify({ errors: result.errors, interrupted: result.interrupted }) : '');
 }
 function dropdown(key, values, current, change) {
   const select = el('select', undefined, { 'aria-label': t(key) });
@@ -52,10 +56,8 @@ function dropdown(key, values, current, change) {
 }
 function render() {
   app.replaceChildren();
-  const header = el('header'); header.append(el('h1', t('title')));
-  header.append(button('close', () => { if (canDiscard()) sdk.hideMainUI(); }));
-  app.append(header, el('p', '', { id: 'notice', role: 'status', 'aria-live': 'polite' }));
-  const configuration = el('div', undefined, { class: 'toolbar' });
+  app.append(el('p', '', { id: 'notice', role: 'status', 'aria-live': 'polite' }));
+  const configuration = el('div', undefined, { class: 'toolbar configuration' });
   configuration.append(button('addRoot', () => showDirectory('root')), button('addTarget', () => showDirectory('target')));
   app.append(configuration);
   if (!state.config) return;
