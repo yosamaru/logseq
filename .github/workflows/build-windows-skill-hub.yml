@@ -1,4 +1,4 @@
-name: Build Windows Skill Hub
+name: Build Windows Release
 
 on:
   workflow_dispatch:
