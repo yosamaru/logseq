@@ -79,6 +79,8 @@ IPC 合约见 [ipc-contract.md](ipc-contract.md)，兼容性见 [compatibility-m
 
 ## Windows Release
 
+新版本成功发布且确认安装包、示例 Skill 和校验文件齐全后，自动删除旧的已发布 Release 及其附件，只保留发布时间最新的一版。Git 标签、提交历史和草稿不受影响；构建或发布失败时不清理旧版本。
+
 GitHub Actions 中运行 `Build Windows Release`，或推送 `skill-hub-v*` 标签。工作流在 Linux 编译核心和 CLI，再由 Windows 构建无签名 x64 NSIS 安装包。只有构建和测试成功后才发布预发行 Release，包含 `.exe`、示例 Skill ZIP 和 `SHA256SUMS.txt`。手动运行自动生成独立 Release 标签，不覆盖已有版本。此流程使用仓库的 `GITHUB_TOKEN`，不需要官方签名服务凭证。
 
 许可证：AGPL-3.0-only。YAML 2.8.4（ISC）、marked 17.0.6（MIT）、DOMPurify 3.4.2（Apache-2.0 OR MPL-2.0）；构建复制浏览器依赖许可证。Vite 8.0.10（MIT）及 Playwright 1.58.2（Apache-2.0）仅开发/测试使用。未升级主项目组件版本。
