@@ -1,6 +1,7 @@
 # This workflow build iOS App as a .ipa file and upload it to TestFlight.
 
-name: Build-iOS
+name: Build iOS
+run-name: ${{ github.workflow }} · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}
 
 on:
   workflow_dispatch:

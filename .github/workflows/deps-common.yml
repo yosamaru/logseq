@@ -1,4 +1,5 @@
 name: logseq/common CI
+run-name: ${{ github.workflow }} · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}
 
 on:
   # Path filters ensure jobs only kick off if a change is made to common

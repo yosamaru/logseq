@@ -1,4 +1,5 @@
 name: Deploy Test Version to Cloud
+run-name: ${{ github.workflow }} · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}
 
 on:
   push:

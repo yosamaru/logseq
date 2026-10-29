@@ -1,4 +1,5 @@
-name: Clojure E2E
+name: App E2E Tests
+run-name: ${{ github.workflow }} · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}
 
 on:
   push:

@@ -1,4 +1,5 @@
 name: Deploy Any Branch to Cloudflare
+run-name: ${{ github.workflow }} · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}
 
 on:
   workflow_dispatch:

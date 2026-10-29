@@ -1,4 +1,5 @@
-name: CI
+name: Logseq CI
+run-name: ${{ github.workflow }} · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}
 
 on:
   push:

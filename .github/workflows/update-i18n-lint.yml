@@ -1,4 +1,5 @@
 name: Update logseq-i18n-lint binaries
+run-name: ${{ github.workflow }} · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}
 
 on:
   workflow_dispatch:

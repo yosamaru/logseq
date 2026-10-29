@@ -1,4 +1,5 @@
-name: CLI sync stress
+name: CLI Sync Stress Tests
+run-name: ${{ github.workflow }} · ${{ github.head_ref || github.ref_name }} · ${{ github.event_name }}
 
 on:
   push:
