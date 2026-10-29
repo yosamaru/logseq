@@ -3,6 +3,9 @@ import DOMPurify from './vendor/purify.es.mjs';
 import { translator } from './i18n.mjs';
 import { filterSkills, lineDiff } from './model.mjs';
 import { call, host as sdk } from './native-bridge.mjs';
+import { followHostTheme } from './theme.mjs';
+
+followHostTheme();
 
 const app = document.querySelector('#app');
 const state = { skills: [], selected: null, config: null, query: '', agent: '', domain: '', version: '', status: '', sort: 'name', view: 'list', busy: false, dirty: false, draft: '' };

@@ -11,7 +11,7 @@ const packageRoot = name => path.resolve(path.dirname(require.resolve(name)), '.
 const core = process.argv.includes('--core');
 const output = core ? path.join(base, '../../static/skill-hub') : path.join(base, 'dist');
 await fs.mkdir(path.join(output, 'vendor'), { recursive: true });
-for (const file of ['index.html', 'app.mjs', 'model.mjs', 'i18n.mjs', 'native-bridge.mjs', 'style.css']) await fs.copyFile(path.join(base, 'src/ui', file), path.join(output, file));
+for (const file of ['index.html', 'app.mjs', 'model.mjs', 'i18n.mjs', 'native-bridge.mjs', 'theme.mjs', 'style.css']) await fs.copyFile(path.join(base, 'src/ui', file), path.join(output, file));
 await fs.copyFile(path.join(packageRoot('marked'), 'lib/marked.esm.js'), path.join(output, 'vendor/marked.esm.js'));
 await fs.copyFile(path.join(packageRoot('dompurify'), 'dist/purify.es.mjs'), path.join(output, 'vendor/purify.es.mjs'));
 for (const [pkg, name] of [['marked', 'LICENSE.md'], ['dompurify', 'LICENSE'], ['yaml', 'LICENSE']]) await fs.copyFile(path.join(packageRoot(pkg), name), path.join(output, 'vendor', `${pkg}.LICENSE`));

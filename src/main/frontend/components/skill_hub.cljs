@@ -149,7 +149,7 @@
            #(.removeEventListener js/window "message" handler))))
      [locale repo])
     (if (util/electron?)
-      [:iframe.w-full.border-0
+      [:iframe.block.w-full.border-0
        {:key (str locale ":" repo)
         :ref frame
         :title (t :skill-hub/title)

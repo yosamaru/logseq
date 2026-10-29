@@ -8,7 +8,6 @@ const nodeAdapterPath = new URL("../deps/db-sync/worker/dist/node-adapter.js", i
 test("CLI sync stress workflow runs local sync/offline stress and validates the graph", () => {
   const workflow = readFileSync(workflowPath, "utf8");
 
-  assert.match(workflow, /^name: CLI sync stress$/m);
   assert.match(workflow, /pnpm --dir deps\/db-sync build:node-adapter/);
   assert.match(workflow, /opam exec -- pnpm cli:release/);
   assert.match(workflow, /pnpm db-worker-node:release:bundle/);

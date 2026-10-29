@@ -98,7 +98,7 @@
       [:div.cp__sidebar-main-content
        {:data-is-margin-less-pages margin-less-pages?
         :data-is-full-width (or margin-less-pages?
-                                (contains? #{:all-files :all-pages :my-publishing} route-name))}
+                                (contains? #{:all-files :all-pages :my-publishing :skill-hub} route-name))}
 
        (footer/footer)
 

@@ -51,6 +51,24 @@ test('built-in view: automatic startup, native bridge, edit, sanitize, install, 
   await page.goto(`http://127.0.0.1:${ui.address().port}`);
   const view = page.frameLocator('iframe');
   await view.getByRole('button', { name: /sample.*Review source/ }).waitFor();
+  const themeStyle = await page.addStyleTag({ content: `
+    :root { --background: 190 100% 11%; --foreground: 44 87% 94%;
+      --secondary: 192 81% 14%; --border: 192 26% 32%; --primary: 175 59% 40%;
+      --muted-foreground: 186 13% 63%; --destructive: 1 71% 52%; --radius: 8px; }
+    html[data-theme=light] { --background: 0 0% 100%; --foreground: 222 47% 11%; }
+    body { font-family: 'Courier New', monospace; font-size: 15px; }
+  ` });
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+  const frame = await page.locator('iframe').elementHandle();
+  await page.waitForFunction(frame => getComputedStyle(frame.contentDocument.body).backgroundColor === 'rgb(0, 47, 56)', frame);
+  assert.equal(await view.locator('body').evaluate(node => getComputedStyle(node).fontFamily), '"Courier New", monospace');
+  assert.equal(await view.locator('#app').evaluate(node => getComputedStyle(node).margin), '0px');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
+  await page.waitForFunction(frame => getComputedStyle(frame.contentDocument.body).backgroundColor === 'rgb(255, 255, 255)', frame);
+  await themeStyle.evaluate(node => { node.textContent += ':root { --ls-primary-background-color: #fdf6e3; --ls-primary-text-color: #586e75; }'; });
+  await page.waitForFunction(frame => getComputedStyle(frame.contentDocument.body).backgroundColor === 'rgb(253, 246, 227)', frame);
+  assert.equal(await view.locator('body').evaluate(node => getComputedStyle(node).color), 'rgb(88, 110, 117)');
   assert.equal(await view.getByLabel('Session token').count(), 0);
   await view.getByLabel('Search name, description, tags, source or date').fill('no-match');
   assert.match(await view.locator('#skills').textContent(), /No Skills match/);
