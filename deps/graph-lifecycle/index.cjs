@@ -16,6 +16,20 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 // One readiness poll is a 50ms sleep plus a health request capped at 1s; anything longer is a clock jump.
 const READY_POLL_MAX_ELAPSED = 2000;
 const id = () => crypto.randomUUID();
+const renameWait = new Int32Array(new SharedArrayBuffer(4));
+function replaceStateFile(temporary, file) {
+  const deadline = Date.now() + 1000;
+  for (;;) {
+    try { fs.renameSync(temporary, file); return; }
+    catch (error) {
+      // Windows readers can temporarily deny FILE_SHARE_DELETE. Keep the
+      // previous state intact and retry the atomic replacement for at most 1s.
+      if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(error.code)
+          || Date.now() >= deadline) throw error;
+      Atomics.wait(renameWait, 0, 0, 20);
+    }
+  }
+}
 function fail(message, code = 'server-stop-failed') {
   throw Object.assign(new Error(message), { code });
 }
@@ -27,7 +41,7 @@ function writeJSON(file, value) {
   const temporary = `${file}.${id()}.tmp`;
   try {
     fs.writeFileSync(temporary, JSON.stringify(value), { flag: 'wx' });
-    fs.renameSync(temporary, file);
+    replaceStateFile(temporary, file);
   } finally { fs.rmSync(temporary, { force: true }); }
 }
 function graphName(repo) {

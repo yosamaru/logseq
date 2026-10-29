@@ -150,6 +150,8 @@ jobs:
         run: |
           pnpm --dir deps/skill-hub install --frozen-lockfile --ignore-workspace
           pnpm --dir deps/skill-hub test
+      - name: Test Windows graph lifecycle file locking
+        run: node --test deps/graph-lifecycle/test/*.test.cjs
       - name: Build unsigned x64 NSIS installer
         working-directory: static
         run: |
