@@ -1,0 +1,35 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { setup, content } from './helpers.mjs';
+import * as vcs from '../src/git.mjs';
+
+test('Git history, working diff, commit comparison, file restore and version tag', async t => {
+  const { hub, root, dir, item } = await setup(t);
+  await vcs.git(root, ['init']);
+  await vcs.git(root, ['config', 'user.email', 'test@example.invalid']);
+  await vcs.git(root, ['config', 'user.name', 'Test']);
+  await vcs.git(root, ['add', '--', 'sample/SKILL.md']);
+  await vcs.git(root, ['-c', 'commit.gpgsign=false', 'commit', '-m', 'Initial skill']);
+  const first = (await vcs.history(dir))[0];
+  await fs.writeFile(path.join(dir, 'SKILL.md'), content('sample', '# Second'));
+  assert.match(await vcs.changes(dir), /Second/);
+  await vcs.git(root, ['add', '--', 'sample/SKILL.md']);
+  await vcs.git(root, ['-c', 'commit.gpgsign=false', 'commit', '-m', 'Update skill']);
+  const second = (await vcs.history(dir))[0];
+  assert.match(await vcs.changes(dir, first.hash, second.hash), /Second/);
+  const tag = await hub.preview('tag', { id: item.id, name: 'v1.0' });
+  await hub.confirm(tag.id, true);
+  assert.equal((await vcs.git(root, ['rev-parse', 'v1.0'])).trim(), second.hash);
+  await fs.writeFile(path.join(dir, 'untracked.md'), 'uncommitted supporting file');
+  await assert.rejects(hub.preview('tag', { id: item.id, name: 'v2.0' }), { code: 'CHANGED' });
+  await fs.unlink(path.join(dir, 'untracked.md'));
+  const detail = await hub.detail(item.id);
+  const plan = await hub.preview('restore-file', { id: item.id, expected: detail.contentHash, revision: first.hash });
+  await hub.confirm(plan.id, true);
+  assert.equal(await fs.readFile(path.join(dir, 'SKILL.md'), 'utf8'), content());
+  assert.equal((await vcs.git(root, ['rev-parse', 'HEAD'])).trim(), second.hash, 'restore never resets repository HEAD');
+  await assert.rejects(vcs.historical(dir, '--help'), { code: 'REVISION' });
+  await assert.rejects(vcs.tag(dir, '../bad'), { code: 'TAG' });
+});

@@ -1,0 +1,24 @@
+{
+  "name": "@logseq/skill-hub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "main": "src/desktop.mjs",
+  "engines": { "node": ">=22.20.0" },
+  "scripts": {
+    "test": "node build.mjs && node --test test/*.test.mjs",
+    "build": "node build.mjs",
+    "build:core": "node build.mjs --core",
+    "test:desktop": "node build.mjs && node --test test/desktop.test.mjs"
+  },
+  "dependencies": {
+    "dompurify": "3.4.2",
+    "marked": "17.0.6",
+    "yaml": "2.8.4"
+  },
+  "devDependencies": {
+    "playwright": "1.58.2",
+    "vite": "8.0.10"
+  }
+}

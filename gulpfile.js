@@ -102,6 +102,14 @@ const common = {
     return rawCopySrc(resourceSyncGlobs).pipe(gulp.dest(outputPath))
   },
 
+  buildSkillHub () {
+    return exec('node deps/skill-hub/build.mjs --core', { cwd: __dirname })
+  },
+
+  watchSkillHub () {
+    return gulp.watch('deps/skill-hub/src/**', common.buildSkillHub)
+  },
+
   // NOTE: All assets from node_modules are copied to the output directory
   syncAssetFiles (...params) {
     return gulp.series(
@@ -327,12 +335,13 @@ exports.cap = common.runCapWithLocalDevServerEntry
 exports.clean = common.clean
 exports.watch = gulp.series(
   common.syncResourceFile,
+  common.buildSkillHub,
   common.syncAssetFiles,
-  gulp.parallel(common.keepSyncResourceFile, css.watchCSS))
+  gulp.parallel(common.keepSyncResourceFile, common.watchSkillHub, css.watchCSS))
 exports.watchMobile = gulp.series(
   common.syncResourceFile, common.syncAssetFiles,
   gulp.parallel(common.keepSyncResourceFile, common.keepSyncWorkersToMobile, css.watchMobileCSS))
 exports.build = gulp.series(common.clean, common.syncResourceFile,
-  common.syncAssetFiles, css.buildCSS)
+  common.buildSkillHub, common.syncAssetFiles, css.buildCSS)
 exports.buildMobile = gulp.series(common.clean, common.syncResourceFile,
   common.syncAssetFiles, css.buildMobileCSS)

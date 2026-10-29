@@ -308,6 +308,14 @@
             :icon "calendar"
             :shortcut :go/journals})))
 
+      (when (util/electron?)
+        (sidebar-item
+         {:class "skill-hub-nav"
+          :title (t :nav.skill-hub/label)
+          :href (rfe/href :skill-hub)
+          :active (and (not srs-open?) (= route-name :skill-hub))
+          :icon "tool"}))
+
       (for [nav checked-navs]
         (cond
           (= nav :flashcards)

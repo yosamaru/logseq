@@ -11,6 +11,7 @@
             [frontend.components.plugins :as plugins]
             [frontend.components.repo :as repo]
             [frontend.components.settings :as settings]
+            [frontend.components.skill-hub :as skill-hub]
             [frontend.components.user.login :as login]
             [frontend.config :as config]
             [io.factorhouse.hsx.core :as hsx]
@@ -68,6 +69,10 @@
    ["/settings"
     {:name :settings
      :view settings/settings}]
+
+   ["/skill-hub"
+    {:name :skill-hub
+     :view skill-hub/page}]
 
    ["/import"
     {:name :import

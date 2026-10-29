@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.state/
+config.local.json
+TEST-RESULTS.tap
+TEST-REPORT.md
+PI-ACCEPTANCE.json
+ESM-SCAN.json
+.pnpm-store/

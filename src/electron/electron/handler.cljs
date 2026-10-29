@@ -28,6 +28,7 @@
             [electron.plugin :as plugin]
             [electron.server :as server]
             [electron.shell :as shell]
+            [electron.skill-hub :as skill-hub]
             [electron.spell-check :as spell-check]
             [electron.state :as state]
             [electron.utils :as utils]
@@ -42,6 +43,15 @@
 
 (defmethod handle :mkdir [_window [_ dir]]
   (fs/mkdirSync dir))
+
+(defmethod handle :skill-hub/request [_window [_ operation args]]
+  (skill-hub/<request operation args))
+
+(defmethod handle :skill-hub/directory [window [_ options]]
+  (skill-hub/<directory window options))
+
+(defmethod handle :skill-hub/reveal [_window [_ id]]
+  (skill-hub/<reveal id))
 
 (defmethod handle :mkdir-recur [_window [_ dir]]
   (fs/mkdirSync dir #js {:recursive true}))

@@ -107,6 +107,8 @@
     "db-worker-node:compile:bundle": "run-s db-worker-node:compile db-worker-node:bundle",
     "cli:release": "pnpm --dir cli bundle && node ./scripts/stage-cli-runtime.mjs",
     "desktop:prepare-runtime-js": "node ./scripts/prepare-desktop-runtime-js.mjs",
+    "skill-hub:build": "node ./deps/skill-hub/build.mjs --core",
+    "skill-hub:test": "pnpm --dir deps/skill-hub test",
     "cli:e2e": "bb dev:cli-e2e",
     "cli:e2e:skip-build": "bb dev:cli-e2e --skip-build",
     "cljs:dev-release-app": "clojure -M:cljs release app db-worker db-worker-node --config-merge \"{:closure-defines {frontend.config/DEV-RELEASE true}}\"",
@@ -199,6 +201,7 @@
     "uniqolor": "1.1.1",
     "url": "^0.11.4",
     "util": "^0.12.5",
+    "yaml": "2.8.4",
     "yup": "^1.7.1"
   },
   "optionalDependencies": {

@@ -192,6 +192,8 @@
     (t :graph/diff)
     :settings
     (t :nav/settings)
+    :skill-hub
+    (t :nav.skill-hub/label)
     :import
     (t :import/title)
     "Logseq"))

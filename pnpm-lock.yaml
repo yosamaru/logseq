@@ -248,6 +248,9 @@ importers:
       util:
         specifier: ^0.12.5
         version: 0.12.5
+      yaml:
+        specifier: 2.8.4
+        version: 2.8.4
       yup:
         specifier: ^1.7.1
         version: 1.7.1

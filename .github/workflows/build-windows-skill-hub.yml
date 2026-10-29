@@ -1,0 +1,195 @@
+name: Build Windows Skill Hub
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'skill-hub-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-skill-hub-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+  JAVA_VERSION: '21'
+  CLOJURE_VERSION: '1.12.4.1618'
+  OCAML_VERSION: '5.1.1'
+
+jobs:
+  compile:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            cli/pnpm-lock.yaml
+            deps/skill-hub/pnpm-lock.yaml
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+          key: linux-windows-release-clojure-${{ hashFiles('**/deps.edn') }}
+          restore-keys: linux-windows-release-clojure-
+      - uses: DeLaGuardo/setup-clojure@13.5
+        with:
+          cli: ${{ env.CLOJURE_VERSION }}
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: ${{ env.OCAML_VERSION }}
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --dir deps/skill-hub install --frozen-lockfile --ignore-workspace
+          pnpm --dir cli install --frozen-lockfile --ignore-workspace
+          cd cli
+          opam install . --deps-only --yes
+      - name: Build desktop and CLI runtimes on Linux
+        run: |
+          pnpm exec gulp build
+          pnpm cljs:release-electron
+          pnpm db-worker-node:bundle
+          opam exec -- pnpm cli:release
+          pnpm webpack-app-build
+          pnpm desktop:prepare-runtime-js
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+      - name: Verify staged runtimes
+        run: |
+          test -s static/js/skill-hub.cjs
+          test -s static/skill-hub/index.html
+          test -s static/js/db-worker-node.js
+          test -s static/.agents/skills/logseq-cli/SKILL.md
+          node static/js/logseq-cli.js --help
+          node -e 'const {DesktopHub}=require("./static/js/skill-hub.cjs"); if(typeof DesktopHub!=="function") process.exit(1)'
+      - name: Set release tag
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version=$(node -p 'require("./resources/package.json").version')
+          if [ "$EVENT_NAME" = push ]; then
+            tag="$REF_NAME"
+          else
+            tag="skill-hub-v${version}-${GITHUB_RUN_NUMBER}"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-runtime
+          path: static/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  package:
+    needs: compile
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-runtime
+          path: static
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: |
+            resources/pnpm-lock.yaml
+            deps/skill-hub/pnpm-lock.yaml
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: windows-electron-${{ hashFiles('resources/pnpm-lock.yaml') }}
+      - name: Test Skill Hub on Windows
+        run: |
+          pnpm --dir deps/skill-hub install --frozen-lockfile --ignore-workspace
+          pnpm --dir deps/skill-hub test
+      - name: Build unsigned x64 NSIS installer
+        working-directory: static
+        run: |
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node ../scripts/electron-builder-unsigned.mjs --win nsis --x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify packaged resources and collect release files
+        shell: pwsh
+        run: |
+          $requiredFiles = @(
+            'static/dist/win-unpacked/Logseq.exe',
+            'static/dist/win-unpacked/resources/app.asar',
+            'static/dist/win-unpacked/resources/.agents/skills/logseq-cli/SKILL.md',
+            'static/dist/win-unpacked/resources/sidecar/embedding_server.py'
+          )
+          foreach ($requiredFile in $requiredFiles) {
+            if (-not (Test-Path -LiteralPath $requiredFile)) { throw "Missing $requiredFile" }
+          }
+          $installers = @(Get-ChildItem static/dist/*-nsis.exe)
+          if ($installers.Count -ne 1) { throw 'Expected exactly one NSIS installer' }
+          New-Item -ItemType Directory -Path release-files | Out-Null
+          Copy-Item -LiteralPath $installers[0].FullName -Destination release-files
+          Compress-Archive -Path agent-skills/verify-skill-inventory -DestinationPath release-files/verify-skill-inventory.zip
+          Get-ChildItem release-files -File | ForEach-Object {
+            $digest = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$digest  $($_.Name)"
+          } | Set-Content release-files/SHA256SUMS.txt -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: release-files/
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    needs: [compile, package]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+          path: release-files
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.compile.outputs.tag }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          cat > release-notes.md <<'EOF'
+          Windows x64 NSIS installer with native Skill Hub.
+
+          Includes a sample Skill archive and SHA256 checksums. This build is unsigned.
+          EOF
+          gh release create "$RELEASE_TAG" release-files/* \
+            --target "$RELEASE_COMMIT" \
+            --title "Skill Hub $RELEASE_TAG" \
+            --notes-file release-notes.md \
+            --prerelease
